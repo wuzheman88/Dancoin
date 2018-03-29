@@ -18,7 +18,7 @@
       <nuxt />
     </el-main>
     <div class="input-shoot">
-      <el-input type="text" v-model="content">
+      <el-input type="text" v-model="message">
         <el-button @click="onShoot" slot="append">发布</el-button>
       </el-input>
     </div>
@@ -77,7 +77,7 @@ html {
 .input-shoot {
   z-index: 101;
   position: absolute;
-  top: 40px;
+  top: 90%;
   left: 35%;
   width: 30%;
 }
@@ -98,13 +98,29 @@ html {
 
 <script>
 import { Barrage } from '~/components/barrage.js'
+// import socket from '~/plugins/socket.io.js'
+// import socket from 'socket.io-client'
+import io from 'socket.io-client'
+
+let socket
 
 export default {
+  asyncData(context, callback) {
+    socket.emit('last-messages', function (messages) {
+      callback(null, {
+        messages,
+        message: ''
+      })
+    })
+  },
   data () {
     return {
       content: '',
-      barrage: null,
-      isLoading: false
+      // barrage: null,
+      isLoading: false,
+      danList: [],
+      message: '',
+      barrage: {}
     }
   },
   methods: {
@@ -116,33 +132,50 @@ export default {
 
     },
     onShoot: function () {
-      let validContent = this.content.trim()
-      if (validContent.length > 0) {
-        this.barrage.shoot(validContent)
-        this.content = ''
+      let msg = this.message.trim()
+      if (msg.length > 0) {
+        this.barrage.shoot(msg)
+        socket.emit('send-message', msg)
+        this.message = ''
       }
+    },
+    scrollToBottom() {
+      this.$nextTick(() => {
+        let barrage = this.barrage
+        this.danList.forEach((t) => {
+          barrage.shoot(t)
+        })
+      })
     }
+  },
+  beforeMount() {
+    socket = io()
+    socket.on('connect', () => {
+      console.log('connected!!')
+    })
+    socket.on('new-message', (message) => {
+      this.danList.push(message)
+      this.barrage.shoot(message)
+    })
   },
   mounted: function () {
     let canvas = this.$refs.dan_canvas
     canvas.width = document.documentElement.clientWidth
     canvas.height = document.documentElement.clientHeight
-    let barrage = new Barrage(canvas);
-    barrage.draw();
-    const textList = ['弹幕', '666', '233333333',
-      'javascript', 'html', 'css', '前端框架', 'Vue', 'React',
-      'Angular', '测试弹幕效果', '弹幕', '666', '233333333',
-      'javascript', 'html', 'css', '前端框架', 'Vue', 'React',
-      'Angular', '测试弹幕效果', '弹幕', '666', '233333333',
-      'javascript', 'html', 'css', '前端框架', 'Vue', 'React',
-      'Angular', '测试弹幕效果'
-    ];
+    this.barrage = new Barrage(canvas)
+    this.barrage.draw()
+    // const textList = ['弹幕', '666', '233333333',
+    //   'javascript', 'html', 'css', '前端框架', 'Vue', 'React',
+    //   'Angular', '测试弹幕效果', '弹幕', '666', '233333333',
+    //   'javascript', 'html', 'css', '前端框架', 'Vue', 'React',
+    //   'Angular', '测试弹幕效果', '弹幕', '666', '233333333',
+    //   'javascript', 'html', 'css', '前端框架', 'Vue', 'React',
+    //   'Angular', '测试弹幕效果'
+    // ];
 
-    textList.forEach((t) => {
-      barrage.shoot(t);
+    this.danList.forEach((t) => {
+      barrage.shoot(t)
     })
-
-    this.barrage = barrage
   }
 }
 </script>

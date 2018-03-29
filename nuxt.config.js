@@ -18,11 +18,12 @@ module.exports = {
   ** Customize the progress bar color
   */
   loading: { color: '#3B8070' },
+  // modules: ['~/io'],
   /*
   ** Build configuration
   */
   build: {
-    vendor: ['axios', 'lodash', 'vue-i18n', 'element-ui', 'vue-socket.io'],
+    vendor: ['axios', 'lodash', 'vue-i18n', 'element-ui', 'socket.io-client'],
     /*
     ** Run ESLint on save
     */
@@ -38,7 +39,6 @@ module.exports = {
     }
   },
   plugins: [
-    '~plugins/element-ui',
-    {src: '~plugins/socket.io', ssr: false}
+    '~plugins/element-ui'
   ]
 }

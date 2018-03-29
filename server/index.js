@@ -2,22 +2,17 @@ const { Nuxt, Builder } = require('nuxt')
 const express = require('express')
 const logger = require('morgan')
 var http = require('http')
+const app = express()
 
+// const server = http.createServer(app)
+// const io = require('socket.io')(server)
 const socketio = require('socket.io')
 
-const app = express()
 const port = process.env.PORT || 3002
-
-app.listen = function (app) {
-  var server = http.createServer(this)
-  let io = socketio(server)
-  socketio.listen(3003)
-  io.sockets.on('connection', (socket) => {
-    console.log('socket connected')
-  })
-
-  return server.listen.apply(server, arguments)
-}
+const server = http.createServer(app)
+// app.listen = function (app) {
+//   return server.listen.apply(server, arguments)
+// }
 
 app.use(logger('dev'))
 
@@ -32,4 +27,18 @@ if (config.dev) {
 }
 
 app.use(nuxt.render)
-app.listen(port, () => { console.log(`Server is listening on http://localhost:${port}`) })
+server.listen(port, () => { console.log(`Server is listening on http://localhost:${port}`) })
+
+let io = socketio(server)
+// socketio.listen(3003)
+
+let messages = []
+io.sockets.on('connection', (socket) => {
+  socket.on('last-messages', function (fn) {
+    fn(messages.slice(-50))
+  })
+  socket.on('send-message', function (message) {
+    messages.push(message)
+    socket.broadcast.emit('new-message', message)
+  })
+})
